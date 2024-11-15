@@ -127,6 +127,23 @@ CLI conforme execução abaixo:
 
 ## Feedback
 
-If you have any feedback, please reach out to us at william.reges1986@gmail.com
+Se você tem algum feedback, por favor envie email para william.reges1986@gmail.com
 
 
+## Referencias
+
+* ECS
+  * [O que é o Amazon Elastic Container Service](https://docs.aws.amazon.com/pt_br/AmazonECS/latest/developerguide/Welcome.html)
+  * [ECS - Exemplos da Amazon usando AWS CLI](https://docs.aws.amazon.com/pt_br/cli/latest/userguide/cli_ecs_code_examples.html)
+  * [Criar uma tarefa do Linux no Amazon ECS para o tipo de inicialização do Fargate com a AWS CLI](https://docs.aws.amazon.com/pt_br/AmazonECS/latest/developerguide/ECS_AWSCLI_Fargate.html)
+  * [ECS - AWS CLI Command Reference](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ecs/index.html)
+
+* ECR
+  * [ECR Exemplos da Amazon usando AWS CLI](https://docs.aws.amazon.com/pt_br/cli/latest/userguide/cli_ecr_code_examples.html)
+  * [ECR AWS CLI Command Reference](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/ecr/index.html)
+
+* ELB
+  * [O que é Elastic Load Balancing](https://docs.aws.amazon.com/pt_br/elasticloadbalancing/latest/userguide/what-is-load-balancing.html)
+  * [O que é um Network Load Balancer](https://docs.aws.amazon.com/pt_br/elasticloadbalancing/latest/network/introduction.html)
+  * [ELB AWS CLI Command Reference](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/elbv2/index.html)
+  * 
