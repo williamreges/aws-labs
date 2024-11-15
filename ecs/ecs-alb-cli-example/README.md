@@ -120,14 +120,12 @@ CLI conforme execução abaixo:
   bash 03_ecs_generate_service.sh
 ```
 
-## 🔗 Links
-
-[![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/william-reges-lima/)
-
 
 ## Feedback
 
-Se você tem algum feedback, por favor envie email para william.reges1986@gmail.com
+Se você tem algum feedback, por favor envie mensagem no linkedin abaixo:
+
+[![linkedin](https://img.shields.io/badge/linkedin-0A66C2?style=for-the-badge&logo=linkedin&logoColor=white)](https://www.linkedin.com/in/william-reges-lima/)
 
 
 ## Referencias
