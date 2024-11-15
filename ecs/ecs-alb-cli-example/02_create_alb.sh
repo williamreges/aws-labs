@@ -36,7 +36,7 @@ if [ ! $ARN_LB ]; then
   --profile $PROFILE
   echo " ... Application Load Balancer criado com sucesso"
 
-  sleep 60
+  sleep 120
 else
   echo " - Load Balancer $LB_NOME já existe e não precisa ser recriado."
 fi

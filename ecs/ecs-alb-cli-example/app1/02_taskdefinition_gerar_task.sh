@@ -1,3 +1,5 @@
+#!/bin/bash
+
 echo "=== START PROCCESS TASK DEFINITION ==="
 
 #==================DECLARE============================================================================
@@ -13,15 +15,12 @@ echo "Familia da Task: $NAME_TASKDEFINITION"
 
 
 echo "Obtendo ARN da Task Definition $NAME_TASKDEFINITION"
-ARN_TASKDEFINITION=$(aws ecs list-task-definitions --family-prefix $NAME_TASKDEFINITION --profile $PROFILE)
+ARN_TASKDEFINITION=$(aws ecs list-task-definitions --family-prefix $NAME_TASKDEFINITION --output text --profile $PROFILE)
 echo "- ARN da TaskDefinition: $ARN_TASKDEFINITION"
 
-  if [ ! ARN_TASKDEFINITION ]; then
-    echo "Criando TaskDefinition $NAME_TASKDEFINITION"
-    aws ecs register-task-definition --cli-input-json file://$(pwd)/fargate-task.json --profile $PROFILE
-  else
-    echo "TaskDefinition $NAME_TASKDEFINITION já existe e não precisa ser recriado mas pode ser atualizado"
-  fi
+echo "Criando TaskDefinition $NAME_TASKDEFINITION"
+aws ecs register-task-definition --cli-input-json file://fargate-task.json --profile $PROFILE
+
 
 #===================END===============================================================================
 echo "=== END PROCCESS TASK DEFINITION ==="
