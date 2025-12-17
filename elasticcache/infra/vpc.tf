@@ -1,7 +1,8 @@
 resource "aws_vpc" "vpc-redis-lab" {
   cidr_block = "10.1.0.0/16"
   tags = {
-    Name = "vpc-redis-lab"
+    Name  = "vpc-redis-lab"
+    label = "laboratorio-elasticache"
   }
 }
 
@@ -11,6 +12,7 @@ resource "aws_subnet" "private_subnet" {
   availability_zone = var.availability_zone
 
   tags = {
-    Name = "private-subnet-redis-lab"
+    Name  = "private-subnet-redis-lab"
+    label = "laboratorio-elasticache"
   }
 }

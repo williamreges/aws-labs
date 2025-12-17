@@ -45,25 +45,20 @@ ElasticCache é um serviço gerenciado que oferece:
 ```java
 import redis.clients.jedis.Jedis;
 
-public class RedisConnection {
+public class JedisConnection {
     public static void main(String[] args) {
-        // Endpoint do ElasticCache
-        String host = "seu-cluster.abc123.ng.amazonaws.com";
-        int port = 6379;
-        
-        // Conectar ao Redis
-        Jedis jedis = new Jedis(host, port);
-        
-        // Testar conexão
+        Jedis jedis = new Jedis(
+                new HostAndPort("lab-redis-cluster.jhuwus.0001.sae1.cache.amazonaws.com", 6379));
+//        jedis.auth("1234!");
+        jedis.ttl("50000");
+
         String response = jedis.ping();
         System.out.println("Conexão: " + response);
-        
-        // Operações básicas
-        jedis.set("chave", "valor");
-        String valor = jedis.get("chave");
+
+        jedis.set("chave-jedis", "valor-jedis");
+        String valor = jedis.get("chave-jedis");
         System.out.println("Valor: " + valor);
-        
-        // Fechar conexão
+
         jedis.close();
     }
 }
@@ -101,18 +96,21 @@ import io.lettuce.core.api.sync.RedisCommands;
 
 public class RedisClientConnection {
     public static void main(String[] args) {
-        // URI de conexão ao ElasticCache
-        String uri = "redis://seu-endpoint.xxxxx.ng.amazonaws.com:6379";
-        
-        RedisClient client = RedisClient.create(uri);
-        RedisCommands<String, String> commands = client.connect().sync();
-        
+
+        RedisClient client = RedisClient.create(RedisURI.Builder
+                .redis("lab-redis-cluster.jhuwus.0001.sae1.cache.amazonaws.com")
+                .withSsl(false)
+//                .withPassword("1234!")
+                .withDatabase(0)
+                .build());
+        StatefulRedisConnection<String, String> connection = client.connect();
+        RedisCommands<String, String> commands = connection.sync();
         try {
             String pong = commands.ping();
             System.out.println("Conexão bem-sucedida: " + pong);
-            
-            commands.set("chave", "valor");
-            String valor = commands.get("chave");
+
+            commands.set("chave-lettuce", "valor-lettuce");
+            String valor = commands.get("chave-lettuce");
             System.out.println("Valor recuperado: " + valor);
         } finally {
             client.shutdown();
