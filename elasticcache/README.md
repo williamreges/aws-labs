@@ -81,6 +81,11 @@ aws elasticache describe-cache-parameter-groups --region sa-east-1
 aws elasticache describe-cache-clusters --cache-cluster-id lab-redis-cluster --show-cache-node-info --query 'CacheClusters[0].CacheNodes[0].Endpoint' --region sa-east-1
 ```
 
+### Obter ReplicationGroups dos Clusters
+```bash
+ aws elasticache describe-replication-groups --region sa-east-1
+```
+
 ## Exemplo de Conexão Java com Jedis
 
 ```java
