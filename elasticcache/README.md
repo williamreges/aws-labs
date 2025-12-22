@@ -86,6 +86,12 @@ aws elasticache describe-cache-clusters --cache-cluster-id lab-redis-cluster --s
  aws elasticache describe-replication-groups --region sa-east-1
 ```
 
+
+### Obter ReplicationGroup específico com seus Clusters
+```bash
+ aws elasticache describe-replication-groups --query "ReplicationGroups[?ReplicationGroupId=='<NOME DO REPLICATION GROUP XPTO>']" --region sa-east-1
+```
+
 ## Exemplo de Conexão Java com Jedis
 
 ```java
