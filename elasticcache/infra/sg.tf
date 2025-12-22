@@ -19,12 +19,14 @@ resource "aws_security_group" "sg-redis" {
 }
 
 resource "aws_security_group_rule" "allow_to_redis" {
+  security_group_id = aws_security_group.sg-redis.id
   type              = "ingress"
   from_port         = 6379
   to_port           = 6379
   protocol          = "tcp"
-  self              = true
-  security_group_id = aws_security_group.sg-redis.id
+#   self              = true
+  cidr_blocks       = [aws_vpc.vpc-redis-lab.cidr_block]
+
 }
 
 resource "aws_security_group" "sg-redis-bastion" {
@@ -36,7 +38,7 @@ resource "aws_security_group" "sg-redis-bastion" {
     from_port   = 0
     to_port     = 0
     protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
+    cidr_blocks =  ["0.0.0.0/0"]
   }
 
   tags = {
@@ -45,36 +47,11 @@ resource "aws_security_group" "sg-redis-bastion" {
 }
 
 resource "aws_security_group_rule" "allow_to_bastion_redis" {
+  security_group_id = aws_security_group.sg-redis-bastion.id
   type              = "ingress"
   from_port         = 22
   to_port           = 22
   protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.sg-redis-bastion.id
+  cidr_blocks       =  ["0.0.0.0/0"]
+
 }
-
-
-
-
-# Bastion Host Security Group
-# This security group allows the bastion host to connect to the Redis instance.
-# resource "aws_security_group" "sg-bastion-redis" {
-#   name   = "lab-bastion-redis-sg"
-#   vpc_id = aws_vpc.vpc-redis-lab.id
-#
-#   egress {
-#     from_port   = 0
-#     to_port     = 0
-#     protocol    = "-1"
-#     cidr_blocks = ["0.0.0.0/0"]
-#   }
-# }
-#
-# resource "aws_security_group_rule" "allow_bastion_to_redis" {
-#   type              = "ingress"
-#   from_port         = 6379
-#   to_port           = 6379
-#   protocol          = "tcp"
-#   security_group_id = aws_security_group.sg-bastion-redis.id
-#
-# }
