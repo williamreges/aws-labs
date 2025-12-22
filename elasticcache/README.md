@@ -1,9 +1,6 @@
 
 # ElasticCache com Redis
 
-## Vis-+-+-+-+-+
-# ElasticCache com Redis
-
 ## Introdução
 
 Amazon ElasticCache é um serviço web que facilita a implantação, operação e escala de um cache em memória na nuvem. O Redis é um armazenamento de dados em memória de código aberto que suporta várias estruturas de dados.
@@ -40,6 +37,50 @@ ElasticCache é um serviço gerenciado que oferece:
 3. Conectar aplicações ao endpoint
 4. Monitorar performance via CloudWatch
 
+
+## AWS CLI - Comandos Essenciais
+
+### Listar Clusters ElasticCache
+```bash
+aws elasticache describe-cache-clusters --region sa-east-1
+```
+
+### Listar com Detalhes Completos
+```bash
+aws elasticache describe-cache-clusters --show-cache-node-info --region sa-east-1
+```
+
+### Descrever um Cluster Específico
+```bash
+aws elasticache describe-cache-clusters --cache-cluster-id lab-redis-cluster --region sa-east-1
+```
+
+### Criar um Cluster Redis
+```bash
+aws elasticache create-cache-cluster \
+    --cache-cluster-id my-redis-cluster \
+    --engine redis \
+    --cache-node-type cache.t3.micro \
+    --engine-version 7.0 \
+    --num-cache-nodes 1 \
+    --region sa-east-1
+```
+
+### Deletar um Cluster
+```bash
+aws elasticache delete-cache-cluster --cache-cluster-id my-redis-cluster --region sa-east-1
+```
+
+### Listar Grupos de Parâmetros
+```bash
+aws elasticache describe-cache-parameter-groups --region sa-east-1
+```
+
+### Obter Endpoint do Cluster
+```bash
+aws elasticache describe-cache-clusters --cache-cluster-id lab-redis-cluster --show-cache-node-info --query 'CacheClusters[0].CacheNodes[0].Endpoint' --region sa-east-1
+```
+
 ## Exemplo de Conexão Java com Jedis
 
 ```java
@@ -72,6 +113,7 @@ public class JedisConnection {
     <version>7.0.0</version>
 </dependency>
 ```
+
 
 **Com Connection Pool:**
 ```java
@@ -200,3 +242,10 @@ RedissonClient redisson = Redisson.create(config);
 - [Documentação AWS ElasticCache](https://docs.aws.amazon.com/elasticache/)
 - [Redis Documentation](https://redis.io/documentation)
 - [Terraform Elasticache Cluster](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/elasticache_cluster)
+- [Spring Data Redis](https://docs.spring.io/spring-data/redis/reference/redis.html)
+
+### AWS Session Manager
+- [Working with Session Manager](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with.html)
+- [Start Session](https://docs.aws.amazon.com/systems-manager/latest/userguide/session-manager-working-with-sessions-start.html)
+
+
