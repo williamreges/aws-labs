@@ -1,0 +1,29 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Effect": "Allow",
+      "Action": "logs:CreateLogGroup",
+      "Resource": "arn:aws:logs:sa-east-1:940308622416:*"
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "logs:CreateLogStream",
+        "logs:PutLogEvents"
+      ],
+      "Resource": [
+        "arn:aws:logs:sa-east-1:940308622416:log-group:/aws/lambda/validadigitocpffunction:*"
+      ]
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateEventSourceMapping",
+        "lambda:ListEventSourceMappings",
+        "lambda:ListFunctions"
+      ],
+      "Resource": "arn:aws:lambda:sa-east-1:940308622416:function:validadigitocpffunction"
+    }
+  ]
+}

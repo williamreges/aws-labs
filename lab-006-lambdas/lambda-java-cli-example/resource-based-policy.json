@@ -1,0 +1,32 @@
+{
+  "Version": "2012-10-17",
+  "Id": "default",
+  "Statement": [
+    {
+      "Sid": "lambda-7277a12c-7b5c-409d-a921-891eb87adf62",
+      "Effect": "Allow",
+      "Principal": {
+        "Service": "s3.amazonaws.com"
+      },
+      "Action": "lambda:InvokeFunction",
+      "Resource": "arn:aws:lambda:sa-east-1:940308622416:function:validadigitocpffunction",
+      "Condition": {
+        "StringEquals": {
+          "AWS:SourceAccount": "940308622416"
+        },
+        "ArnLike": {
+          "AWS:SourceArn": "arn:aws:s3:::mybucket-reges"
+        }
+      }
+    },
+    {
+      "Effect": "Allow",
+      "Action": [
+        "lambda:CreateEventSourceMapping",
+        "lambda:ListEventSourceMappings",
+        "lambda:ListFunctions"
+      ],
+      "Resource": "arn:aws:lambda:sa-east-1:940308622416:function:validadigitocpffunction"
+    }
+  ]
+}
