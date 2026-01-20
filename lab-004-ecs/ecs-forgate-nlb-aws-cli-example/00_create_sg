@@ -1,0 +1,9 @@
+aws ec2 create-security-group \
+    --group-name ecs-fargate-nlb-sg \
+    --description "Security group allowing ingress from any IP"
+
+# Replace <SECURITY_GROUP_ID> with the actual ID after creation
+aws ec2 authorize-security-group-ingress \
+    --group-id <SECURITY_GROUP_ID> \
+    --protocol -1 \
+    --cidr 0.0.0.0/0
