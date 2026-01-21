@@ -5,7 +5,7 @@ variable "regiao" {
 }
 
 variable "vpc_cidr_block" {
-  type = string
+  type    = string
   default = "10.0.0.0/16"
 }
 variable "private-subnets" {

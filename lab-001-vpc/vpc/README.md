@@ -16,7 +16,7 @@ They denote subnet configurations and deployment environment
 
 ## ⚙️ Infrastructure Components
 
-![001-RouterAndSecurity-v3.png](docs/001-RouterAndSecurity-v4.png)
+![001-RouterAndSecurity-v3.png](docs/diagrama.drawio.svg)
 
 ## Overview
 

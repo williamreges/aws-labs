@@ -94,10 +94,10 @@ resource "aws_security_group" "lab_sg_default" {
 
 # Create Ingress Rule SSH
 resource "aws_vpc_security_group_ingress_rule" "allow_from_sg_default" {
-  security_group_id = aws_security_group.lab_sg_default.id
-  from_port         = 0
-  ip_protocol       = "-1"
-  to_port           = 0
+  security_group_id            = aws_security_group.lab_sg_default.id
+  from_port                    = 0
+  ip_protocol                  = "-1"
+  to_port                      = 0
   referenced_security_group_id = aws_security_group.lab_sg_default.id
 }
 
