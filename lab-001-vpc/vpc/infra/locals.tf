@@ -1,3 +1,3 @@
 locals {
-  tag_enviromnent = "lab"
+  tag_environment = "lab"
 }

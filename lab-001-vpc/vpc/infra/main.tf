@@ -4,7 +4,7 @@
 resource "aws_vpc" "vpc" {
   cidr_block = var.vpc_cidr_block
   tags = {
-    Name = "vpc-${local.tag_enviromnent}"
+    Name = "vpc-${local.tag_environment}"
   }
 }
 
@@ -13,7 +13,7 @@ resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "gtw-${local.tag_enviromnent}"
+    Name = "gtw-${local.tag_environment}"
   }
 }
 
@@ -27,7 +27,7 @@ resource "aws_route_table" "router-public" {
   }
 
   tags = {
-    Name = "router-public-${local.tag_enviromnent}"
+    Name = "router-public-${local.tag_environment}"
   }
 }
 
@@ -35,7 +35,7 @@ resource "aws_route_table" "router-private" {
   vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "router-private-${local.tag_enviromnent}"
+    Name = "router-private-${local.tag_environment}"
   }
 }
 
@@ -83,12 +83,12 @@ resource "aws_route_table_association" "associate_route_table_public" {
 # =============== CREATE SECURITY GROUP ===============================
 # Create Security Group
 resource "aws_security_group" "lab_sg_default" {
-  name        = "sg_default-${local.tag_enviromnent}"
+  name        = "sg_default-${local.tag_environment}"
   description = "Allow WEB inbound traffic and all outbound traffic"
   vpc_id      = aws_vpc.vpc.id
 
   tags = {
-    Name = "sg_default_${local.tag_enviromnent}"
+    Name = "sg_default_${local.tag_environment}"
   }
 }
 

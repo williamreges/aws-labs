@@ -1,8 +1,8 @@
-# Creating a VPC Infrastructure on AWS using Terraform
+# Lab 001 - VPC Infrastructure on AWS using Terraform
 
 ## 🚀 Introduction
 
-This guide provides step-by-step instructions on how to set up a Virtual Private Cloud (VPC) on Amazon Web Services (AWS) utilizing Terraform scripts. The infrastructure includes essential components such as subnets, internet gateway, route tables, and a security group for web access.
+This guide provides step-by-step instructions on how to set up a Virtual Private Cloud (VPC) on Amazon Web Services (AWS) utilizing Terraform scripts. The infrastructure includes essential components such as subnets, internet gateway, route tables, and security groups for network access management.
 
 
 ## 📋 Prerequisites
@@ -10,8 +10,7 @@ This guide provides step-by-step instructions on how to set up a Virtual Private
 - **Terraform:** Ensure Terraform is installed on your system. You can download it from [Terraform.io](https://www.terraform.io/downloads.html).
 - **AWS Account:** A valid AWS account to create and manage resources.
 - **Access Credentials:** AWS credentials configured locally. Usually, this is done using AWS CLI with `aws configure`.
-- **Variables:** Define `var.private-subnets`, `var.public-subnets`, and `local.tag_enviromnent` before executing.
-They denote subnet configurations and deployment environment
+- **Region:** AWS region is configured to `sa-east-1` (São Paulo) by default.
 
 
 ## ⚙️ Infrastructure Components
@@ -30,16 +29,15 @@ The VPC is a logically isolated section of the AWS cloud. It allows you to launc
 
 ```hcl
 resource "aws_vpc" "vpc" {
-  cidr_block = "10.0.0.0/16"
+  cidr_block = var.vpc_cidr_block
   tags = {
-    Name = "vpc-${local.tag_environment}"
+    Name = "vpc-${local.tag_enviromnent}"
   }
 }
 ```
 - **Resource:** [`aws_vpc`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc)
-- **CIDR Block:** Defines the IP range for the VPC as `10.0.0.0/16`.
-- **Tags:** A `Name` tag is applied for easy identification, leveraging the environment tag defined as
-`${local.tag_environment}`
+- **CIDR Block:** Defines the IP range for the VPC (default: `10.0.0.0/16`), configurable via `var.vpc_cidr_block`.
+- **Tags:** A `Name` tag is applied for easy identification, leveraging the environment tag defined as `${local.tag_enviromnent}` (default: "lab")
 
 ### ☁️ 2. Internet Gateway
 
@@ -50,17 +48,19 @@ resource "aws_internet_gateway" "gw" {
   vpc_id = aws_vpc.vpc.id
 
   tags = {
-    Name = "gtw-${local.tag_environment}"
+    Name = "gtw-${local.tag_enviromnent}"
   }
 }
 ```
--    **Resource:** [`aws_internet_gateway`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway)
+- **Resource:** [`aws_internet_gateway`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway)
 - **Associates** with the VPC to enable internet access.
-- **Tags:** Similar `Name` tagging for tracking and organization.
+- **Tags:** Named with the pattern `gtw-${local.tag_enviromnent}` for tracking and organization.
 
-### ☁️ 3. Route Table for Public Access
+### ☁️ 3. Route Tables
 
-A Route Table with a specific route is necessary to direct internet-bound traffic through the internet gateway.
+Two route tables are created: one for public subnets and one for private subnets.
+
+**3.1 Public Route Table**
 
 ```hcl
 resource "aws_route_table" "router-public" {
@@ -72,24 +72,39 @@ resource "aws_route_table" "router-public" {
   }
 
   tags = {
-    Name = "router-public-${local.tag_environment}"
+    Name = "router-public-${local.tag_enviromnent}"
   }
 }
 ```
 - **Resource:** [`aws_route_table`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table)
 - **Purpose:** Routes internet traffic to and from the VPC via the internet gateway.
-- **Routes:** Implements a route allowing traffic to `0.0.0.0/0` (all internet addresses) through the gateway.
-- **Tags:** Uses environment tagging for clarity.
+- **Routes:** Implements a route allowing traffic to `0.0.0.0/0` (all internet addresses) through the internet gateway.
+- **Tags:** Named with pattern `router-public-${local.tag_enviromnent}` for organization.
+
+**3.2 Private Route Table**
+
+```hcl
+resource "aws_route_table" "router-private" {
+  vpc_id = aws_vpc.vpc.id
+
+  tags = {
+    Name = "router-private-${local.tag_enviromnent}"
+  }
+}
+```
+- **Resource:** [`aws_route_table`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table)
+- **Purpose:** Routes traffic for private subnets (without direct internet access by default).
+- **Tags:** Named with pattern `router-private-${local.tag_enviromnent}` for organization.
 
 ### ☁️ 4. Subnets
 
-**4.1 Private Subnets**
+Subnets divide the VPC into smaller, isolated network segments. This infrastructure creates both private and public subnets across multiple availability zones.
 
-These are isolated from the internet. Resources within these subnets are not accessible directly from outside the VPC.
+**4.1 Private Subnets**
 
 ```hcl
 resource "aws_subnet" "private-subnet" {
-  for_each = var.private_subnets
+  for_each = var.private-subnets
 
   vpc_id            = aws_vpc.vpc.id
   cidr_block        = each.value.cidr_block
@@ -102,17 +117,17 @@ resource "aws_subnet" "private-subnet" {
 - **Resource:** [`aws_subnet`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) (Private)
 - **Purpose:** Hosts resources that should not be accessible directly from the internet.
 - **Configuration:**
-- Uses a `for_each` loop to create subnets based on provided `var.private-subnets`.
-- Associates with the VPC and specifies `cidr_block` and `availability_zone` per subnet.
-- **Tags:** Assigns names based on keys in the variable `var.private-subnets`
+  - Uses a `for_each` loop to create subnets based on provided `var.private-subnets`.
+  - Associates with the VPC and specifies `cidr_block` and `availability_zone` per subnet.
+- **Default Configuration:**
+  - `private-subnet-1a`: `10.0.0.0/24` in `sa-east-1a`
+  - `private-subnet-1c`: `10.0.1.0/24` in `sa-east-1c`
 
-**4.2 Public Subnets** 
-
-Resources in public subnets can receive direct internet access, if required.
+**4.2 Public Subnets**
 
 ```hcl
 resource "aws_subnet" "public-subnet" {
-  for_each = var.public_subnets
+  for_each = var.public-subnets
 
   vpc_id                  = aws_vpc.vpc.id
   cidr_block              = each.value.cidr_block
@@ -125,16 +140,22 @@ resource "aws_subnet" "public-subnet" {
 ```
 - **Resource:** [`aws_subnet`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/subnet) (Public)
 - **Purpose:** Hosts resources accessible from the internet, like web servers.
-- **Configuration:**
-- Uses a `for_each` loop similar to the private subnets but includes `map_public_ip_on_launch = true` for
-auto-assigning public IPs.
-- **Tags:** Named using keys from `var.public-subnets`.
+- **Key Feature:** `map_public_ip_on_launch = true` automatically assigns public IPs to instances launched in these subnets.
+- **Default Configuration:**
+  - `public-subnet-1a`: `10.0.2.0/24` in `sa-east-1a`
+  - `public-subnet-1c`: `10.0.3.0/24` in `sa-east-1c`
 
 ### ☁️ 5. Route Table Associations
 
-Associating public subnets with the public route table ensures that they will route their traffic through the internet gateway.
+Route table associations link subnets to their respective route tables, determining how traffic is routed.
 
 ```hcl
+resource "aws_route_table_association" "associate_route_table_private" {
+  for_each       = aws_subnet.private-subnet
+  subnet_id      = each.value.id
+  route_table_id = aws_route_table.router-private.id
+}
+
 resource "aws_route_table_association" "associate_route_table_public" {
   for_each       = aws_subnet.public-subnet
   subnet_id      = each.value.id
@@ -142,84 +163,178 @@ resource "aws_route_table_association" "associate_route_table_public" {
 }
 ```
 - **Resource:** [`aws_route_table_association`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table_association)
-- **Function:** Associates each public subnet with the public route table for internet connectivity.
-- **Configuration:** Utilizes `for_each` to iterate through `aws_subnet.public-subnet` resources
+- **Function:** Ensures each subnet is associated with the correct route table.
+- **Configuration:** Uses `for_each` to iterate through private and public subnets respectively.
+- **Effect:** 
+  - Private subnets route traffic through the private route table (no internet access by default).
+  - Public subnets route internet traffic through the public route table and internet gateway.
 
-### 🛡️ 6. Security Group for Web Traffic
+### 🛡️ 6. Security Group
 
-A Security Group (SG) acts as a virtual firewall controlling inbound and outbound traffic to AWS resources.
+A Security Group acts as a virtual firewall controlling inbound and outbound traffic to AWS resources.
 
 ```hcl
-resource "aws_security_group" "allow_web" {
-  name        = "allow-web-${local.tag_environment}"
+resource "aws_security_group" "lab_sg_default" {
+  name        = "sg_default-${local.tag_enviromnent}"
   description = "Allow WEB inbound traffic and all outbound traffic"
   vpc_id      = aws_vpc.vpc.id
 
   tags = {
-    Name = "sg_allow_web_${local.tag_environment}"
+    Name = "sg_default_${local.tag_enviromnent}"
   }
 }
 ```
 - **Resource:** [`aws_security_group`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group)
-- **Purpose:** Controls inbound and outbound traffic for web servers.
-- **Configuration:**
-- **Name:** Sets a name with environment tag `allow-web-${local.tag_environment}`.
-- **Description:** Specifies the rules to allow web and SSH traffic inbound, and all traffic outbound
+- **Purpose:** Controls inbound and outbound traffic for resources in the VPC.
+- **Name:** Follows the pattern `sg_default-${local.tag_enviromnent}` (default: `sg_default-lab`).
+- **Description:** Indicates allowance of all internal traffic and outbound internet access.
 
-#### Ingress Rules
-- **Resource:** [`aws_vpc_security_group_ingress_rule`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule)
-- **SSH Access** (Port 22): Allows SSH traffic from anywhere.
-- **HTTP Access** (Port 80): Allows web traffic from anywhere.
+#### Ingress Rule (Internal Communication)
 
 ```hcl
-resource "aws_vpc_security_group_ingress_rule" "allow_ssh_ipv4" {
-  security_group_id = aws_security_group.allow_web.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 22
-  ip_protocol       = "tcp"
-  to_port           = 22
-}
-
-resource "aws_vpc_security_group_ingress_rule" "allow_web_ipv4" {
-  security_group_id = aws_security_group.allow_web.id
-  cidr_ipv4         = "0.0.0.0/0"
-  from_port         = 80
-  ip_protocol       = "tcp"
-  to_port           = 80
+resource "aws_vpc_security_group_ingress_rule" "allow_from_sg_default" {
+  security_group_id            = aws_security_group.lab_sg_default.id
+  from_port                    = 0
+  ip_protocol                  = "-1"
+  to_port                      = 0
+  referenced_security_group_id = aws_security_group.lab_sg_default.id
 }
 ```
+- **Resource:** [`aws_vpc_security_group_ingress_rule`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_ingress_rule)
+- **Purpose:** Allows all traffic between resources in the same security group.
+- **Configuration:**
+  - `ip_protocol = "-1"` means all protocols.
+  - `from_port = 0` and `to_port = 0` encompasses all ports.
+  - `referenced_security_group_id` allows traffic from other instances in the same security group.
 
-#### Egress Rules
-- **Resource:** [`aws_vpc_security_group_egress_rule`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_egress_rule)
-- **Allow All Traffic**: Provides outbound access to all destinations.
+#### Egress Rule (Outbound Traffic)
 
 ```hcl
 resource "aws_vpc_security_group_egress_rule" "allow_all_traffic_ipv4" {
-  security_group_id = aws_security_group.allow_web.id
+  security_group_id = aws_security_group.lab_sg_default.id
   cidr_ipv4         = "0.0.0.0/0"
   ip_protocol       = "-1"
 }
 ```
+- **Resource:** [`aws_vpc_security_group_egress_rule`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc_security_group_egress_rule)
+- **Purpose:** Allows unrestricted outbound access to any destination.
+- **Configuration:**
+  - `cidr_ipv4 = "0.0.0.0/0"` allows traffic to all IPv4 addresses.
+  - `ip_protocol = "-1"` allows all protocols on all ports.
 
-## 📦 Applying the Terraform Configuration
+## � Project Structure
 
-1. **Initialize Terraform**: Run `terraform init` to prepare the directory for other commands.
+```
+infra/
+├── provider.tf          # AWS provider configuration (region: sa-east-1)
+├── main.tf              # Main infrastructure resources (VPC, subnets, routes, security group)
+├── variables.tf         # Input variables (VPC CIDR, subnets configuration)
+├── locals.tf            # Local variables (tag_enviromnent: "lab")
+├── outputs.tf           # Output values (VPC ID, subnet IDs, security group)
+└── terraform.tfstate    # Terraform state file
+```
 
-2. **Plan Infrastructure**: Use `terraform plan` to preview the changes Terraform will make.
+## 🔧 Variables and Defaults
 
-3. **Apply Configuration**: Execute `terraform apply` to create the VPC infrastructure.
+### Input Variables (`variables.tf`)
 
-### Example Commands:
+| Variable | Type | Default | Description |
+|----------|------|---------|-------------|
+| `regiao` | string | `sa-east-1` | AWS region for resource deployment |
+| `vpc_cidr_block` | string | `10.0.0.0/16` | CIDR block for the VPC |
+| `private-subnets` | map | 2 subnets (10.0.0.0/24, 10.0.1.0/24) | Private subnet configurations |
+| `public-subnets` | map | 2 subnets (10.0.2.0/24, 10.0.3.0/24) | Public subnet configurations |
+
+### Local Variables (`locals.tf`)
+
+| Variable | Value | Usage |
+|----------|-------|-------|
+| `tag_enviromnent` | `lab` | Used in naming resources (e.g., `vpc-lab`, `sg_default-lab`) |
+
+## 📤 Outputs
+
+The infrastructure exposes the following outputs (`outputs.tf`):
+
+- **vpc**: The VPC ID
+- **private-subnets**: List of private subnet IDs
+- **public-subnets**: List of public subnet IDs
+- **security_group_id_web**: Security group resource details
+
+## 📦 Deployment Guide
+
+### Step-by-Step Instructions
+
+1. **Navigate to the Infrastructure Directory**
+   ```bash
+   cd infra/
+   ```
+
+2. **Initialize Terraform**: Run `terraform init` to download provider plugins and initialize the working directory.
+   ```bash
+   terraform init
+   ```
+
+3. **Review the Plan**: Use `terraform plan` to preview the resources that will be created.
+   ```bash
+   terraform plan
+   ```
+
+4. **Apply the Configuration**: Execute `terraform apply` to create the VPC infrastructure in AWS.
+   ```bash
+   terraform apply
+   ```
+   - Review the proposed changes and type `yes` to confirm.
+
+5. **Verify Outputs**: After successful deployment, Terraform will display the output values (VPC ID, Subnet IDs, etc.).
+   ```bash
+   terraform output
+   ```
+
+### Example Commands Sequence
 
 ```bash
+cd infra/
 terraform init
 terraform plan
 terraform apply
+terraform output
 ```
 
-## Conclusion
+### Destroying the Infrastructure
 
-By following these steps, you will successfully create and configure a VPC on AWS using Terraform. This infrastructure setup forms the foundation for more complex architectures and resource deployments in AWS. Adjust configurations as needed based on specific requirements or environments.
+To tear down all resources created by Terraform:
+
+```bash
+terraform destroy
+```
+- Review the resources to be destroyed and type `yes` to confirm.
+
+## ⚠️ Important Notes
+
+- **State Management**: The `terraform.tfstate` file tracks the infrastructure state. Ensure it's backed up and not committed to version control (use `.gitignore`).
+- **Region**: The default region is `sa-east-1` (São Paulo). Modify `var.regiao` if you need a different AWS region.
+- **Availability Zones**: Subnets are distributed across `sa-east-1a` and `sa-east-1c` for high availability.
+- **Security**: The default security group allows all internal traffic and unrestricted outbound access. Adjust ingress rules as needed for your use case.
+- **Customization**: Override default values using `.tfvars` files or CLI variables:
+  ```bash
+  terraform apply -var="regiao=us-east-1" -var="vpc_cidr_block=172.16.0.0/16"
+  ```
+
+## 🎯 Summary
+
+This VPC infrastructure provides a robust foundation for AWS deployments with:
+- **High Availability**: Resources distributed across multiple availability zones
+- **Network Segmentation**: Separate public and private subnets for security
+- **Internet Connectivity**: Internet gateway for public subnet resources
+- **Flexible Configuration**: Variables allow easy customization of CIDR blocks and regions
+- **Internal Communication**: Security group enables resource-to-resource communication within the VPC
+
+## Troubleshooting
+
+- **Provider Issues**: Ensure AWS CLI credentials are configured correctly with `aws configure`.
+- **Region Errors**: Verify that the specified region is available and that your AWS account has access.
+- **State Conflicts**: If state errors occur, check that no other Terraform processes are running against the same state.
+- **Resource Limits**: Verify that your AWS account has sufficient quotas for EC2 resources.
 
 ## 🔗 References
 * [Terraform Language Documentation](https://developer.hashicorp.com/terraform/language)
