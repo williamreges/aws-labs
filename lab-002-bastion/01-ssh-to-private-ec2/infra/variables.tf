@@ -1,8 +1,3 @@
-# variable "aws_profile" {
-#   type        = string
-#   description = "Profile configurado na pasta.aws"
-#   default     = "aulaaws"
-# }
 
 variable "availability_zone" {
   type        = string
