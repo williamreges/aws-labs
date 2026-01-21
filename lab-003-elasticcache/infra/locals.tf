@@ -1,0 +1,3 @@
+locals {
+  label = "laboratorio-elasticache"
+}
