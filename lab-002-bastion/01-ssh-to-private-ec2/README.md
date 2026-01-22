@@ -17,7 +17,7 @@ Um **Bastion Host** (também chamado de **Jump Host** ou **Jump Box**) é um ser
 ![desenho](./docs/diagrama.drawio.svg)
 
 
-## Este Projeto: Bastion Host para Acesso ao ElastiCache
+## Este Projeto: Bastion Host para Acesso a um EC2 Privado
 
 Este projeto Terraform cria uma infraestrutura completa de bastion host em AWS com os seguintes componentes:
 
