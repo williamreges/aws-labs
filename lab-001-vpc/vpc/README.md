@@ -319,6 +319,45 @@ terraform destroy
   ```bash
   terraform apply -var="regiao=us-east-1" -var="vpc_cidr_block=172.16.0.0/16"
   ```
+## 📺 AWS Console Verification
+
+After deploying the infrastructure, verify the created resources in the AWS Console:
+
+### 1. VPC Overview
+Navigate to the VPC dashboard to view the overall infrastructure including the VPC, subnets, and route tables.
+
+![VPC Structure](./docs/console-vpc.png)
+
+**What to verify:**
+- VPC CIDR block: `10.0.0.0/16`
+- All four subnets created (2 public, 2 private)
+- Internet gateway attached
+
+### 2. Public Route Table Configuration
+Check the public route table associations and routing rules.
+
+![Public Router Configuration](./docs/console-vpc-router-public.png)
+
+**Key points:**
+- **Subnets Associated:** `public-subnet-1a` and `public-subnet-1c`
+- **Route Table:** `router-public-lab`
+- **Routes:**
+  - `10.0.0.0/16` → Local (VPC internal traffic)
+  - `0.0.0.0/0` → `gtw-lab` (Internet Gateway for external access)
+
+### 3. Private Route Table Configuration
+Verify the private route table has no internet gateway route, restricting direct internet access.
+
+![Private Router Configuration](./docs/console-vpc-router-private.png)
+
+**Key points:**
+- **Subnets Associated:** `private-subnet-1a` and `private-subnet-1c`
+- **Route Table:** `router-private-lab`
+- **Routes:**
+  - `10.0.0.0/16` → Local (VPC internal traffic only)
+  - No internet gateway route (no direct internet access by default)
+
+
 
 ## 🎯 Summary
 
