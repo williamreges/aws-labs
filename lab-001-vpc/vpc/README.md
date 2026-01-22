@@ -37,7 +37,7 @@ resource "aws_vpc" "vpc" {
 ```
 - **Resource:** [`aws_vpc`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/vpc)
 - **CIDR Block:** Defines the IP range for the VPC (default: `10.0.0.0/16`), configurable via `var.vpc_cidr_block`.
-- **Tags:** A `Name` tag is applied for easy identification, leveraging the environment tag defined as `${local.tag_enviromnent}` (default: "lab")
+- **Tags:** A `Name` tag is applied for easy identification, leveraging the environment tag defined as `${local.tag_environment}` (default: "lab")
 
 ### ☁️ 2. Internet Gateway
 
@@ -54,7 +54,7 @@ resource "aws_internet_gateway" "gw" {
 ```
 - **Resource:** [`aws_internet_gateway`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/internet_gateway)
 - **Associates** with the VPC to enable internet access.
-- **Tags:** Named with the pattern `gtw-${local.tag_enviromnent}` for tracking and organization.
+- **Tags:** Named with the pattern `gtw-${local.tag_environment}` for tracking and organization.
 
 ### ☁️ 3. Route Tables
 
@@ -79,7 +79,7 @@ resource "aws_route_table" "router-public" {
 - **Resource:** [`aws_route_table`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table)
 - **Purpose:** Routes internet traffic to and from the VPC via the internet gateway.
 - **Routes:** Implements a route allowing traffic to `0.0.0.0/0` (all internet addresses) through the internet gateway.
-- **Tags:** Named with pattern `router-public-${local.tag_enviromnent}` for organization.
+- **Tags:** Named with pattern `router-public-${local.tag_environment}` for organization.
 
 **3.2 Private Route Table**
 
@@ -94,7 +94,7 @@ resource "aws_route_table" "router-private" {
 ```
 - **Resource:** [`aws_route_table`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/route_table)
 - **Purpose:** Routes traffic for private subnets (without direct internet access by default).
-- **Tags:** Named with pattern `router-private-${local.tag_enviromnent}` for organization.
+- **Tags:** Named with pattern `router-private-${local.tag_environment}` for organization.
 
 ### ☁️ 4. Subnets
 
@@ -171,23 +171,25 @@ resource "aws_route_table_association" "associate_route_table_public" {
 
 ### 🛡️ 6. Security Group
 
+### 🛡️ 6. Security Group
+
 A Security Group acts as a virtual firewall controlling inbound and outbound traffic to AWS resources.
 
 ```hcl
 resource "aws_security_group" "lab_sg_default" {
-  name        = "sg_default-${local.tag_enviromnent}"
+  name        = "sg_default-${local.tag_environment}"
   description = "Allow WEB inbound traffic and all outbound traffic"
   vpc_id      = aws_vpc.vpc.id
 
   tags = {
-    Name = "sg_default_${local.tag_enviromnent}"
+    Name = "sg_default_${local.tag_environment}"
   }
 }
 ```
 - **Resource:** [`aws_security_group`](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/security_group)
 - **Purpose:** Controls inbound and outbound traffic for resources in the VPC.
-- **Name:** Follows the pattern `sg_default-${local.tag_enviromnent}` (default: `sg_default-lab`).
-- **Description:** Indicates allowance of all internal traffic and outbound internet access.
+- **Name:** Follows the pattern `sg_default-${local.tag_environment}` (default: `sg_default-lab`).
+- **Description:** Allows all internal traffic between resources in the same security group and unrestricted outbound access.
 
 #### Ingress Rule (Internal Communication)
 
@@ -229,9 +231,10 @@ infra/
 ├── provider.tf          # AWS provider configuration (region: sa-east-1)
 ├── main.tf              # Main infrastructure resources (VPC, subnets, routes, security group)
 ├── variables.tf         # Input variables (VPC CIDR, subnets configuration)
-├── locals.tf            # Local variables (tag_enviromnent: "lab")
+├── locals.tf            # Local variables (tag_environment: "lab")
 ├── outputs.tf           # Output values (VPC ID, subnet IDs, security group)
-└── terraform.tfstate    # Terraform state file
+├── data.tf              # Data sources for additional configurations (if applicable)
+└── versions.tf          # Terraform and provider version constraints
 ```
 
 ## 🔧 Variables and Defaults
@@ -242,23 +245,31 @@ infra/
 |----------|------|---------|-------------|
 | `regiao` | string | `sa-east-1` | AWS region for resource deployment |
 | `vpc_cidr_block` | string | `10.0.0.0/16` | CIDR block for the VPC |
-| `private-subnets` | map | 2 subnets (10.0.0.0/24, 10.0.1.0/24) | Private subnet configurations |
-| `public-subnets` | map | 2 subnets (10.0.2.0/24, 10.0.3.0/24) | Public subnet configurations |
+| `private-subnets` | map | See below | Private subnet configurations |
+| `public-subnets` | map | See below | Public subnet configurations |
+
+#### Private Subnets Configuration
+- `private-subnet-1a`: CIDR `10.0.0.0/24` in availability zone `sa-east-1a`
+- `private-subnet-1c`: CIDR `10.0.1.0/24` in availability zone `sa-east-1c`
+
+#### Public Subnets Configuration
+- `public-subnet-1a`: CIDR `10.0.2.0/24` in availability zone `sa-east-1a`
+- `public-subnet-1c`: CIDR `10.0.3.0/24` in availability zone `sa-east-1c`
 
 ### Local Variables (`locals.tf`)
 
 | Variable | Value | Usage |
 |----------|-------|-------|
-| `tag_enviromnent` | `lab` | Used in naming resources (e.g., `vpc-lab`, `sg_default-lab`) |
+| `tag_environment` | `lab` | Used in naming resources (e.g., `vpc-lab`, `sg_default-lab`) |
 
 ## 📤 Outputs
 
 The infrastructure exposes the following outputs (`outputs.tf`):
 
-- **vpc**: The VPC ID
+- **vpc**: The ID of the VPC
 - **private-subnets**: List of private subnet IDs
 - **public-subnets**: List of public subnet IDs
-- **security_group_id_web**: Security group resource details
+- **security_group_id_web**: The security group resource (lab_sg_default)
 
 ## 📦 Deployment Guide
 
