@@ -171,8 +171,6 @@ resource "aws_route_table_association" "associate_route_table_public" {
 
 ### 🛡️ 6. Security Group
 
-### 🛡️ 6. Security Group
-
 A Security Group acts as a virtual firewall controlling inbound and outbound traffic to AWS resources.
 
 ```hcl
