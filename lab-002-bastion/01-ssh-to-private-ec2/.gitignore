@@ -1,0 +1,14 @@
+/lab-004-ecs/ecs-alb-cli-example/.idea/
+/lab-006-lambdas/lambda-java-cli-example/app.jar
+.terraform/
+terraform.tfstate
+terraform.tfstate.backup
+*.out
+.idea
+.terraform.*
+.vscode/
+*.iml
+.aws-sam/
+.aws-sam/*
+.target/
+*.pem

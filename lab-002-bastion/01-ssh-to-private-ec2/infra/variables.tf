@@ -46,6 +46,12 @@ variable "private_subnet_selected_filter" {
     valueTag = "private-subnet-1a"
   }
 }
+
+variable "ami_instance_type" {
+  type    = string
+  default = "t2.micro"
+}
+
 variable "ami_selected_filter" {
   description = "Fitro de AMI Amazon"
   type = object({
@@ -71,7 +77,7 @@ variable "ami_selected_filter" {
 }
 
 variable "name_key_pair" {
-  type = string
+  type        = string
   description = "Key Pair para o EC2 Bastino para acesso SSH"
-  default = "frankre-key-pair"
+  default     = "lab-key-pair" # Aqui é necesário informar seu key pair pessoal
 }

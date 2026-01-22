@@ -1,12 +1,13 @@
 
-# ========================= EC2 SECURITY=================================
+# ========================= SECURITY PUBLIC EC2=================================
 #Security Group to EC2 Bastion Public Subnet
 resource "aws_security_group" "bastion-sg" {
-  name        = "lab-${local.name}-sg"
+  name        = local.name_sg_instance_bastion
   vpc_id      = data.aws_vpc.vpc_selected.id
   description = "Security group for Bastion Redis cluster"
   tags = {
-    label = local.label
+    Name        = local.name_sg_instance_bastion
+    environment = local.tag_environment
   }
 }
 #
@@ -31,25 +32,27 @@ resource "aws_security_group_rule" "allow_all_from_bastion" {
 }
 
 
-# ========================= EC2 SECURITY=================================
+# ========================= SECURITY PRIVATE EC2================================
 #Security Group to EC2 private subnet
 resource "aws_security_group" "server-sg" {
-  name        = "lab-${local.namehostprivate}-sg"
+  name        = local.name_sg_instance_private
   vpc_id      = data.aws_vpc.vpc_selected.id
-  description = "Security group for server"
+  description = "Security Group for Private Host"
   tags = {
-    label = local.label
+    Name        = local.name_sg_instance_private
+    environment = local.tag_environment
   }
 }
 
 resource "aws_security_group_rule" "allow_ssh_fron_bastion" {
-  security_group_id = aws_security_group.server-sg.id
-  type              = "ingress"
-  from_port         = 22
-  to_port           = 22
-  protocol          = "tcp"
+  security_group_id        = aws_security_group.server-sg.id
+  type                     = "ingress"
+  from_port                = 22
+  to_port                  = 22
+  protocol                 = "tcp"
   source_security_group_id = aws_security_group.bastion-sg.id
 }
+
 
 
 
