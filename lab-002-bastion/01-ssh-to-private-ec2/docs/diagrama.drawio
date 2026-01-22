@@ -479,7 +479,7 @@
         <mxCell id="cHWLwdR-KJZPnCnAR19V-31" value="&lt;span&gt;&lt;font style=&quot;color: rgb(0, 0, 0);&quot;&gt;Bastion&lt;/font&gt;&lt;/span&gt;" style="outlineConnect=0;dashed=0;verticalLabelPosition=bottom;verticalAlign=top;align=center;html=1;shape=mxgraph.aws3.ec2;fillColor=#F58534;gradientColor=none;" parent="cHWLwdR-KJZPnCnAR19V-1" vertex="1">
           <mxGeometry x="150" y="160" width="38.25" height="50" as="geometry" />
         </mxCell>
-        <mxCell id="cHWLwdR-KJZPnCnAR19V-17" value="&lt;span style=&quot;font-size: 12px;&quot;&gt;ssh&amp;nbsp; -i&amp;nbsp; ec2-user@10.0.0.*&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#d5e8d4;strokeColor=#82b366;dashed=1;dashPattern=8 8;flowAnimation=1;" parent="cHWLwdR-KJZPnCnAR19V-1" source="cHWLwdR-KJZPnCnAR19V-31" target="cHWLwdR-KJZPnCnAR19V-16" edge="1">
+        <mxCell id="cHWLwdR-KJZPnCnAR19V-17" value="&lt;span style=&quot;font-size: 12px;&quot;&gt;ssh&amp;nbsp; ec2-user@10.0.0.*&lt;/span&gt;" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fillColor=#d5e8d4;strokeColor=#82b366;dashed=1;dashPattern=8 8;flowAnimation=1;" parent="cHWLwdR-KJZPnCnAR19V-1" source="cHWLwdR-KJZPnCnAR19V-31" target="cHWLwdR-KJZPnCnAR19V-16" edge="1">
           <mxGeometry relative="1" as="geometry">
             <mxPoint x="208" y="190" as="sourcePoint" />
           </mxGeometry>
