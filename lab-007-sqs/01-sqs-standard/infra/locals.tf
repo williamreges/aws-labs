@@ -1,3 +1,3 @@
 locals {
-  label      = "lab"
+  label = "lab"
 }
