@@ -10,6 +10,7 @@ resource "aws_sqs_queue" "lab-sqs-queue" {
   })
 
   tags = {
+    Label       = local.label
     Environment = var.tag_environment
   }
 }
@@ -22,6 +23,6 @@ resource "aws_sqs_queue" "lab-sqs-queue-dlq" {
   receive_wait_time_seconds = var.dlq_receive_wait_time_seconds
 
   tags = {
-    Environment = local.tag_environment
+    Environment = var.tag_environment
   }
 }
