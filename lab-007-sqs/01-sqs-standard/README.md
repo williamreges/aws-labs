@@ -1,59 +1,223 @@
-# Infraestrutura Terraform — SQS Standard
+# SQS Standard — Lab 007
 
-Este diretório contém a infraestrutura criada com Terraform para o laboratório SQS (fila padrão).
+Laboratório de AWS SQS usando Terraform para provisionar uma **fila SQS padrão** com **Dead-Letter Queue (DLQ)** e scripts CLI para interação.
 
-## Visão geral
+## 📋 Visão Geral
 
-A configuração provisiona os recursos AWS necessários para experimentar uma fila SQS Standard, incluindo políticas IAM e recursos auxiliares utilizados nos exercícios do laboratório.
+Este repositório contém:
 
-## Recursos principais criados
+1. **Infraestrutura Terraform** (`infra/`) — provisiona uma fila SQS padrão com DLQ e política IAM
+2. **Scripts CLI** (`cli/`) — ferramentas bash para enviar, receber e purgar mensagens
 
-- SQS Standard queue — fila padrão do Amazon SQS para envio/recebimento de mensagens.
-- IAM policy / roles — políticas que concedem permissões SQS (definidas em `policy/policy-sqs.json`) e vínculos a identidades conforme necessário.
-- Security Group — grupo de segurança usado por recursos que requerem conectividade (definido em `sg.tf`).
-- Data sources / variáveis / locais — configurações e metadados usados para nomear e parametrizar recursos.
+### O que é criado
 
-## Arquivos importantes
+- **Fila SQS Principal** (`lab-sqs-queue`): Fila padrão para envio/recebimento de mensagens
+- **Dead-Letter Queue** (`lab-sqs-standard-dlq`): Fila para mensagens não processadas após retries
+- **Política IAM** (`policy/policy-sqs.json`): Autoriza ações SQS (SendMessage, ReceiveMessage, DeleteMessage, PurgeQueue, etc.)
+- **Política de Redrive**: Máximo de 4 tentativas antes de enviar para DLQ
 
-- `provider.tf` — configuração do provider AWS (credenciais, região).
-- `variables.tf` — variáveis de entrada que parametrizam a implantação.
-- `locals.tf` — valores locais derivados usados na configuração.
-- `data.tf` — data sources usados pela infra (por exemplo, conta, AMIs ou outros dados).
-- `main.tf` — definição principal dos recursos (fila SQS e associações).
-- `iams.tf` — recursos IAM (políticas e associações); referencia `policy/policy-sqs.json`.
-- `sg.tf` — definições de grupos de segurança.
-- `output.tf` — outputs exportados (ex.: URL e ARN da fila).
-- `policy/policy-sqs.json` — JSON com as permissões SQS necessárias para os exercícios.
+---
 
-## Variáveis e outputs
+## 📁 Estrutura de Arquivos
 
-As variáveis estão em `variables.tf` e permitem customizar nomes, tags e a região. Os outputs em `output.tf` expõem informações úteis como a URL da fila e o ARN, para uso por aplicações ou etapas seguintes do laboratório.
+```
+infra/
+├── main.tf                    # Define as filas SQS (principal e DLQ)
+├── iams.tf                    # Política IAM para acessar a fila
+├── variables.tf               # Variáveis configuráveis (nomes, delays, tags)
+├── locals.tf                  # Valores locais (reutilizáveis)
+├── provider.tf                # Configuração AWS provider
+├── data.tf                    # Data sources (ex: conta AWS)
+├── policy/
+│   └── policy-sqs.json        # Template de política IAM
 
-## Como usar
-
-Inicialize e aplique a infraestrutura com os comandos Terraform padrão:
-
-```bash
-terraform init
-terraform plan -out=plan.tfplan
-terraform apply "plan.tfplan"
+cli/
+├── sendmessage.sh             # Enviar mensagens para a fila
+├── pullmessages.sh            # Receber e deletar mensagens
+└── purgemessage.sh            # Purgar todas as mensagens da fila
 ```
 
-Após a execução, verifique os outputs:
+---
 
+## 🔧 Infraestrutura (`infra/`)
+
+### main.tf
+
+Define duas filas SQS:
+
+**Fila Principal** (`aws_sqs_queue.lab-sqs-queue`):
+- `delay_seconds`: Atraso antes da mensagem ficar disponível (padrão: 90s)
+- `max_message_size`: Tamanho máximo de mensagem em bytes (padrão: 2048)
+- `message_retention_seconds`: Tempo de retenção (padrão: 86400 = 1 dia)
+- `receive_wait_time_seconds`: Long polling timeout (padrão: 10s)
+- `redrive_policy`: Encaminha para DLQ após 4 tentativas falhadas
+
+**Dead-Letter Queue** (`aws_sqs_queue.lab-sqs-queue-dlq`):
+- Recebe mensagens que não foram processadas após máximo de retries
+- Mesmas configurações de delay/retenção da fila principal
+
+### iams.tf
+
+Define a política SQS via `aws_sqs_queue_policy`:
+- Referencia `policy/policy-sqs.json` usando `templatefile()`
+- Substitui `${account_id}`, `${region}` e `${queue_name}` no template
+- Autoriza ações: SendMessage, ReceiveMessage, DeleteMessage, PurgeQueue, ChangeMessageVisibility, GetQueueAttributes, SetQueueAttributes, GetQueueUrl, DeleteQueue
+
+### variables.tf
+
+| Variável | Tipo | Padrão | Descrição |
+|----------|------|--------|-----------|
+| `region` | string | `sa-east-1` | Região AWS |
+| `sqs_name` | string | `lab-sqs-queue` | Nome da fila principal |
+| `sqs_dlq_name` | string | `lab-sqs-standard-dlq` | Nome da DLQ |
+| `tag_environment` | string | `lab` | Tag Environment |
+| `sqs_delay_seconds` | number | `90` | Delay da fila principal |
+| `sqs_max_message_size` | number | `2048` | Tamanho máx. da fila principal |
+| `sqs_message_retention_seconds` | number | `86400` | Retenção da fila principal |
+| `sqs_receive_wait_time_seconds` | number | `10` | Long polling da fila principal |
+| `dlq_delay_seconds` | number | `90` | Delay da DLQ |
+| `dlq_max_message_size` | number | `2048` | Tamanho máx. da DLQ |
+| `dlq_message_retention_seconds` | number | `86400` | Retenção da DLQ |
+| `dlq_receive_wait_time_seconds` | number | `10` | Long polling da DLQ |
+
+### locals.tf
+
+Define valores reutilizados:
+- `label`: prefixo para identificação (`lab`)
+
+### policy/policy-sqs.json
+
+Política IAM em JSON que autoriza a conta AWS root executar:
+- `sqs:ListQueues` — listar filas
+- `sqs:SendMessage` — enviar mensagens
+- `sqs:ReceiveMessage` — receber mensagens
+- `sqs:DeleteMessage` — deletar mensagens
+- `sqs:PurgeQueue` — purgar a fila
+- E outras ações auxiliares (ChangeMessageVisibility, GetQueueAttributes, etc.)
+
+---
+
+## 🎯 Scripts CLI (`cli/`)
+
+Todos os scripts listam filas SQS disponíveis e permitem selecionar a fila alvo.
+
+### sendmessage.sh
+
+**Função**: Enviar uma mensagem para a fila.
+
+**Como usar**:
 ```bash
-terraform output
+cd cli
+./sendmessage.sh
 ```
 
-Remova a infraestrutura quando terminar:
+**Fluxo**:
+1. Lista filas SQS disponíveis
+2. Você seleciona uma pelo número
+3. Digite a mensagem a enviar
+4. Mensagem é enviada via `aws sqs send-message`
 
+### pullmessages.sh
+
+**Função**: Receber mensagens da fila e opcionalmente deletá-las.
+
+**Como usar**:
 ```bash
-terraform destroy -auto-approve
+cd cli
+./pullmessages.sh
 ```
 
-## Observações
+**Fluxo**:
+1. Lista filas SQS disponíveis
+2. Você seleciona uma
+3. Exibe até 10 mensagens (modo tabela)
+4. Pergunta se você deseja deletar as mensagens lidas
+5. Se sim, deleta os ReceiptHandles das mensagens
 
-- A política em `policy/policy-sqs.json` contém as ações SQS necessárias; reveja-a antes de atribuir a identidades em produção.
-- Arquivos de estado (`terraform.tfstate`) não devem ser comitados em repositórios públicos.
+### purgemessage.sh
 
-Se quiser, eu posso também adicionar exemplos de uso da fila (scripts que enviam/recebem mensagens) ou explicar campos específicos de `main.tf` e `iams.tf`.
+**Função**: Purgar (remover todas) as mensagens da fila.
+
+**Como usar**:
+```bash
+cd cli
+./purgemessage.sh
+```
+
+**Fluxo**:
+1. Lista filas SQS disponíveis
+2. Você seleciona uma
+3. Executa `aws sqs purge-queue` para remover todas as mensagens
+
+⚠️ **Cuidado**: Purge é irreversível.
+
+---
+
+## 🚀 Como Usar
+
+### Pré-requisitos
+
+- **Terraform** v1.0+
+- **AWS CLI** configurada com credenciais
+- **Bash** (Linux/Mac ou Git Bash no Windows)
+- Permissões SQS na conta AWS
+
+### Deployment
+
+```bash
+cd infra
+
+# Validar configuração
+terraform fmt
+terraform validate
+
+# Planejar
+terraform plan
+
+# Aplicar
+terraform apply
+```
+
+### Usar os scripts CLI
+
+```bash
+cd cli
+
+# Enviar mensagem
+./sendmessage.sh
+
+# Receber mensagens
+./pullmessages.sh
+
+# Purgar fila
+./purgemessage.sh
+```
+
+### Cleanup
+
+```bash
+cd infra
+terraform destroy
+```
+
+---
+
+## 📝 Notas Importantes
+
+- **Configuração AWS CLI**: Os scripts CLI requerem credenciais AWS configuradas (`~/.aws/credentials` ou variáveis de ambiente)
+- **Redrive Policy**: Mensagens com erro após 4 tentativas são automaticamente enviadas para a DLQ
+- **Long Polling**: Default de 10 segundos reduz custos ao esperar mensagens
+
+---
+
+## 🎓 Referências
+
+- [AWS SQS Documentation](https://docs.aws.amazon.com/sqs/)
+- [AWS SQS Pricing](https://aws.amazon.com/sqs/pricing/)
+- [Terraform AWS SQS](https://registry.terraform.io/providers/hashicorp/aws/latest/docs/resources/sqs_queue)
+
+---
+
+**Author**: William Reges  
+**Lab**: 007 — SQS Standard  
+**Última atualização**: Fevereiro 2026
