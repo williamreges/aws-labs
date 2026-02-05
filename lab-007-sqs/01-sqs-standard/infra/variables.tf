@@ -1,83 +1,72 @@
-
-variable "availability_zone" {
-  type        = string
-  description = "The availability zone to deploy resources in."
-  default     = "sa-east-1a"
-}
-
 variable "region" {
   type        = string
-  description = "Região da AWS"
+  description = "AWS region"
   default     = "sa-east-1"
 }
 
-variable "vpc_selected_filter" {
-  description = "Nome da Tag e Valor da tag da VPC para filtro"
-  type = object({
-    nameTag  = string
-    valueTag = string
-  })
-  default = {
-    nameTag  = "tag:Name",
-    valueTag = "vpc-lab"
-  }
+variable "sqs_delay_seconds" {
+  type        = number
+  description = "Delay seconds for the main SQS queue"
+  default     = 90
 }
 
-variable "public_subnet_selected_filter" {
-  description = "Nome da Tag e Valor da tag da Public Subnet para filtro"
-  type = object({
-    nameTag  = string
-    valueTag = string
-  })
-  default = {
-    nameTag  = "tag:Name",
-    valueTag = "public-subnet-1a"
-  }
+variable "sqs_max_message_size" {
+  type        = number
+  description = "Maximum message size (bytes) for the main SQS queue"
+  default     = 2048
 }
 
-variable "private_subnet_selected_filter" {
-  description = "Nome da Tag e Valor da tag da Private Subnet para filtro"
-  type = object({
-    nameTag  = string
-    valueTag = string
-  })
-  default = {
-    nameTag  = "tag:Name",
-    valueTag = "private-subnet-1a"
-  }
+variable "sqs_message_retention_seconds" {
+  type        = number
+  description = "Message retention period (seconds) for the main SQS queue"
+  default     = 86400
 }
 
-variable "ami_instance_type" {
-  type    = string
-  default = "t2.micro"
+variable "sqs_receive_wait_time_seconds" {
+  type        = number
+  description = "Long polling wait time (seconds) for the main SQS queue"
+  default     = 10
 }
 
-variable "ami_selected_filter" {
-  description = "Fitro de AMI Amazon"
-  type = object({
-    owner = string
-    filters = list(object({
-      nameTag  = string
-      valueTag = string
-    }))
-  })
-  default = {
-    owner = "amazon"
-    filters = [
-      {
-        nameTag  = "architecture"
-        valueTag = "x86_64"
-      },
-      {
-        nameTag  = "name"
-        valueTag = "al2023-ami-2023*"
-      }
-    ]
-  }
+variable "dlq_delay_seconds" {
+  type        = number
+  description = "Delay seconds for the DLQ SQS queue"
+  default     = 90
 }
 
-variable "name_key_pair" {
+variable "dlq_max_message_size" {
+  type        = number
+  description = "Maximum message size (bytes) for the DLQ SQS queue"
+  default     = 2048
+}
+
+variable "dlq_message_retention_seconds" {
+  type        = number
+  description = "Message retention period (seconds) for the DLQ SQS queue"
+  default     = 86400
+}
+
+variable "dlq_receive_wait_time_seconds" {
+  type        = number
+  description = "Long polling wait time (seconds) for the DLQ SQS queue"
+  default     = 10
+}
+
+variable "sqs_name" {
   type        = string
-  description = "Key Pair para o EC2 Bastino para acesso SSH"
-  default     = "lab-key-pair" # Aqui é necesário informar seu key pair pessoal
+  description = "Nome da fila SQS principal"
+  default     = "lab-sqs-queue"
 }
+
+variable "sqs_dlq_name" {
+  type        = string
+  description = "Nome da fila DLQ (dead-letter)"
+  default     = "lab-sqs-standard-dlq"
+}
+
+variable "tag_environment" {
+  type        = string
+  description = "Tag Environment usada nas resources"
+  default     = "lab"
+}
+

@@ -1,25 +1,25 @@
 resource "aws_sqs_queue" "lab-sqs-queue" {
-  name                      = local.sqsname
-  delay_seconds             = 90
-  max_message_size          = 2048
-  message_retention_seconds = 86400
-  receive_wait_time_seconds = 10
+  name                      = var.sqs_name
+  delay_seconds             = var.sqs_delay_seconds
+  max_message_size          = var.sqs_max_message_size
+  message_retention_seconds = var.sqs_message_retention_seconds
+  receive_wait_time_seconds = var.sqs_receive_wait_time_seconds
   redrive_policy = jsonencode({
     deadLetterTargetArn = aws_sqs_queue.lab-sqs-queue-dlq.arn
     maxReceiveCount     = 4
   })
 
   tags = {
-    Environment = local.tag_environment
+    Environment = var.tag_environment
   }
 }
 
 resource "aws_sqs_queue" "lab-sqs-queue-dlq" {
-  name                      = local.sqsnamedlq
-  delay_seconds             = 90
-  max_message_size          = 2048
-  message_retention_seconds = 86400
-  receive_wait_time_seconds = 10
+  name                      = var.sqs_dlq_name
+  delay_seconds             = var.dlq_delay_seconds
+  max_message_size          = var.dlq_max_message_size
+  message_retention_seconds = var.dlq_message_retention_seconds
+  receive_wait_time_seconds = var.dlq_receive_wait_time_seconds
 
   tags = {
     Environment = local.tag_environment
