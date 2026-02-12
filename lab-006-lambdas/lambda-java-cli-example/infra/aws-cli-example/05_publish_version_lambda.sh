@@ -1,12 +1,12 @@
 
 #==========================DECLARE=================================
 export NOME_RECURSO=validadigitocpffunction
-export PROFILE=aulaaws
-export CONTA_AWS=$(aws sts get-caller-identity --query Account --output text --profile $PROFILE);
+
+export CONTA_AWS=$(aws sts get-caller-identity --query Account --output text );
 
 #==========================BEGIN=====================================
 echo "Lambda: $NOME_RECURSO"
-echo "Profile: $PROFILE"
+
 echo "Conta AWS: $CONTA_AWS "
 
 
@@ -14,8 +14,7 @@ echo "Conta AWS: $CONTA_AWS "
 ARN_LAMBDA=$(aws lambda get-function \
               --function-name $NOME_RECURSO \
               --query Configuration.FunctionArn \
-              --output text \
-              --profile $PROFILE);
+              --output text );
 
 if [ $ARN_LAMBDA ]; then
   echo "=== CREATE VERSION FUNCTION LAMBDA  ==="
@@ -24,7 +23,7 @@ if [ $ARN_LAMBDA ]; then
   bash 04_update_latest_lambda.sh
 
   aws lambda publish-version \
-      --function-name $NOME_RECURSO --profile $PROFILE
+      --function-name $NOME_RECURSO
 
   echo "=== VERSION FUNCTION LAMBDA CREATE SUCCESS==="
 fi

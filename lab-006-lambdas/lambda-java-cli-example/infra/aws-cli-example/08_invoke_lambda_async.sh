@@ -1,12 +1,12 @@
 
 #==========================DECLARE=================================
 export NOME_RECURSO=validadigitocpffunction
-export PROFILE=aulaaws
-export CONTA_AWS=$(aws sts get-caller-identity --query Account --output text --profile $PROFILE);
+
+export CONTA_AWS=$(aws sts get-caller-identity --query Account --output text );
 
 #==========================BEGIN=====================================
 echo "Lambda: $NOME_RECURSO"
-echo "Profile: $PROFILE"
+
 echo "Conta AWS: $CONTA_AWS "
 
 
@@ -14,17 +14,16 @@ echo "Conta AWS: $CONTA_AWS "
 ARN_LAMBDA=$(aws lambda get-function \
               --function-name $NOME_RECURSO \
               --query Configuration.FunctionArn \
-              --output text \
-              --profile $PROFILE);
+              --output text );
 
 if [ $ARN_LAMBDA ]; then
   echo "=== INVOKE SUFIX FUNCTION LAMBDA  ==="
 
 
 echo "=== LISTA DE ALIASES E EXISTENTES ==="
-aws lambda list-aliases --function-name ${NOME_RECURSO} --output table --profile $PROFILE
+aws lambda list-aliases --function-name ${NOME_RECURSO} --output table
 echo "=== LISTA DE VERSOES E EXISTENTES ==="
-aws lambda list-versions-by-function --function-name ${NOME_RECURSO} --query 'Versions[*].Version' --output table --profile $PROFILE
+aws lambda list-versions-by-function --function-name ${NOME_RECURSO} --query 'Versions[*].Version' --output table
 
   echo ""
   read -p "Informe a versão ou um Alias a ser invocada: " SUFIX
@@ -35,7 +34,7 @@ aws lambda list-versions-by-function --function-name ${NOME_RECURSO} --query 'Ve
             --invocation-type Event \
             --cli-binary-format raw-in-base64-out \
             --payload '{ "cpf": "228699918" }' \
-            response.json --profile $PROFILE
+            response.json
 
       sleep 3
 

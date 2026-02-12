@@ -2,12 +2,12 @@
 
 #==========================DECLARE=================================
 export NOME_RECURSO=validadigitocpffunction
-export PROFILE=aulaaws
-export CONTA_AWS=$(aws sts get-caller-identity --query Account --output text --profile $PROFILE);
+
+export CONTA_AWS=$(aws sts get-caller-identity --query Account --output text );
 
 #==========================BEGIN=====================================
 echo "Lambda: $NOME_RECURSO"
-echo "Profile: $PROFILE"
+
 echo "Conta AWS: $CONTA_AWS "
 
 sleep 3
@@ -15,8 +15,7 @@ sleep 3
 # Verificando se a policy já existe
 ARN_POLICY=$(aws iam list-policies --scope=Local \
                 --query 'Policies[?PolicyName==`aws-lambda-'${NOME_RECURSO}'-custom-policy`].Arn' \
-                --output text \
-                --profile $PROFILE);
+                --output text);
 
 if [ $ARN_POLICY ]; then
   echo "Policy e Role já existem e não precisa ser recriado"
@@ -27,8 +26,7 @@ echo "=== CRIACAO DE POLICY aws-lambda-validadigitocpffunction-custom-policy ===
 aws iam create-policy \
     --policy-name aws-lambda-${NOME_RECURSO}-custom-policy \
     --policy-document file://iamr/policy/policy.json\
-    --description "This policy grants access to all Put CloudWatch" \
-    --profile $PROFILE
+    --description "This policy grants access to all Put CloudWatch"
 
 sleep 3
 
@@ -36,15 +34,13 @@ echo ""
 echo "=== CRIACAO DE ROLE aws-lambda-validadigitocpffunction-custom-role ==="
 aws iam create-role \
     --role-name aws-lambda-${NOME_RECURSO}-custom-role \
-    --assume-role-policy-document file://iamr/trust/policy-trust.json \
-    --profile $PROFILE
+    --assume-role-policy-document file://iamr/trust/policy-trust.json
 
 echo ""
 echo "=== ANEXANDO POLICY A ROLE aws-lambda-validadigitocpffunction-custom-role==="
 aws iam attach-role-policy \
     --policy-arn arn:aws:iam::$CONTA_AWS:policy/aws-lambda-${NOME_RECURSO}-custom-policy \
-    --role-name aws-lambda-validadigitocpffunction-custom-role \
-    --profile $PROFILE
+    --role-name aws-lambda-validadigitocpffunction-custom-role
 
 #==========================END==============================================
 echo "=== FIM ==="
