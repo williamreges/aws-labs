@@ -1,119 +1,268 @@
-# Lab 006 - Lambda Java com Terraform e AWS CLI
+# Lab 006 - Lambda Java with Terraform and AWS CLI
 
-Este projeto demonstra como criar, empacotar, provisionar e invocar uma função AWS Lambda utilizando Java 17, Terraform e AWS CLI. O objetivo é servir como referência prática para quem deseja explorar Lambda com Java e infraestrutura como código.
+This project demonstrates how to create, package, provision, and invoke an AWS Lambda function using Java 17, Terraform, and AWS CLI. The goal is to serve as a practical reference for those who want to explore Lambda with Java and infrastructure as code.
 
-## 📁 Estrutura do Projeto
+## 📁 Project Structure
 
 ```
 ├── app/
-│   ├── validadigitocpffunction/   # Código-fonte Java da função Lambda
+│   ├── validadigitocpffunction/   # Java Lambda function source code
 │   │   ├── pom.xml
 │   │   ├── src/main/java/org/example/
 │   │   │   ├── GeneratorDigitoCpfHandler.java
 │   │   │   ├── CalcularDACUtils.java
 │   │   │   └── Pessoa.java
-│   │   └── events/event-cpf.json # Exemplo de evento para teste
-│   └── generator-jar-to-infra.sh # Script para build e cópia do JAR
+│   │   └── events/event-cpf.json # Example event for testing
+│   └── generator-jar-to-infra.sh # Script to build and copy the JAR
 ├── infra/
-│   ├── terraform/                # Infraestrutura como código (Terraform)
-│   │   ├── *.tf                  # Arquivos de recursos, variáveis, outputs, IAM, Lambda
-│   │   ├── iamr/                 # Políticas e trust policies
-│   │   └── code/                 # Local onde o JAR é copiado
-│   └── aws-cli-example/          # Scripts alternativos para AWS CLI
-├── invoke/                       # Scripts para invocação manual da Lambda
-│   ├── invoke_lambda_sync.sh
-│   └── invoke_lambda_async.sh
+│   ├── terraform/                # Infrastructure as code (Terraform)
+│   │   ├── *.tf                  # Resource, variable, output, IAM, Lambda files
+│   │   ├── iamr/                 # Policies and trust policies
+│   │   └── code/                 # Where the JAR is copied
+│   └── aws-cli-example/          # Alternative scripts for AWS CLI
+├── invoke/-+-+-+-+-+
+# Lab 006 - Lambda Java with Terraform and AWS CLI
+
+This project demonstrates how to create, package, provision, and invoke an AWS Lambda function using Java 17, Terraform, and AWS CLI. The goal is to serve as a practical reference for those who want to explore Lambda with Java and infrastructure as code.
 ```
 
-## 🚀 Visão Geral
+## 🚀 Overview
 
-O fluxo principal consiste em:
-1. Desenvolver a função Lambda em Java (pasta `app/validadigitocpffunction`)
-2. Empacotar o JAR com Maven
-3. Provisionar a infraestrutura com Terraform OU scripts AWS CLI
-4. Invocar e testar a função Lambda
+The main workflow consists of:
+1. Develop the Lambda function in Java (folder `app/validadigitocpffunction`)
+2. Package the JAR with Maven
+3. Provision infrastructure with Terraform OR AWS CLI scripts
+4. Invoke and test the Lambda function
 
 ---
 
-## 📋 Pré-requisitos
+## 📋 Prerequisites
 
-- Conta AWS com permissões para criar IAM, Lambda, S3
+- AWS account with permissions to create IAM, Lambda, S3
 - [Terraform](https://www.terraform.io/downloads.html)
 - [AWS CLI](https://docs.aws.amazon.com/cli/)
 - [Java 17+](https://adoptium.net/)
 - [Maven](https://maven.apache.org/)
-- Configurar credenciais AWS (ex: `aws configure` ou arquivo de profile)
+- Configure AWS credentials (e.g., `aws configure` or profile file)
 
 ---
 
-
-## 🔧 Infraestrutura (`infra/terraform`)
+## 🔧 Infrastructure (`infra/terraform`)
 
 ### provider.tf
 Resource: `provider "aws"`
-- Configura o provedor AWS, define a região (`region`), autenticação e permite interação com os serviços AWS.
+- Configures the AWS provider, defines the region (`region`), authentication, and enables interaction with AWS services.
 
 ### main.tf
+
+```hcl
+resource "aws_lambda_function" "this" {
+  function_name = var.function_name
+  filename      = local.jar_fullpath
+  handler       = var.handler
+  runtime       = var.runtime
+  role          = aws_iam_role.lambda_role.arn
+  publish       = var.publish
+
+  source_code_hash = filebase64sha256(local.jar_fullpath)
+
+  tags = {
+    label       = local.label
+    environment = local.environment
+  }
+  lifecycle {
+    create_before_destroy = true
+  }
+}
+
+resource "aws_lambda_alias" "alias_dev" {
+  name             = "dev"
+  description      = "Development environment - always points to latest"
+  function_name    = aws_lambda_function.this.function_name
+  function_version = "$LATEST"
+}
+```
+
 Resources:
-- `aws_lambda_function.validadigitocpffunction`: Cria a função Lambda, define nome, handler, runtime, timeout, memória, role, caminho do JAR.
-- `source_code_hash`: Usa `filebase64sha256()` para detectar mudanças no JAR e atualizar a função.
-- (Pode incluir associações entre recursos, como permissões ou triggers.)
+- `aws_lambda_function.validadigitocpffunction`: Creates the Lambda function, defines name, handler, runtime, timeout, memory, role, and JAR path.
+- `source_code_hash`: Uses `filebase64sha256()` to detect JAR changes and update the function.
+- (May include associations between resources, such as permissions or triggers.)
+
 
 ### variables.tf
-Declaração das variáveis principais:
-| Variável | Tipo | Default | Descrição |
-|----------|------|---------|-------------|
-| `regiao` | string | `sa-east-1` | Região AWS |
-| `lambda_function_name` | string | `validadigitocpffunction` | Nome da função Lambda |
-| `runtime` | string | `java17` | Runtime da Lambda |
-| `handler` | string | `org.example.GeneratorDigitoCpfHandler::handleRequest` | Handler Java |
-| `jar_path` | string | `code/app.jar` | Caminho do JAR compilado |
-| `timeout` | number | `30` | Timeout da Lambda (segundos) |
-| `memory_size` | number | `512` | Memória da Lambda (MB) |
-| `tag_environment` | string | `lab-006` | Tag de ambiente |
+
+```hcl
+variable "profile" {
+  description = "AWS CLI profile to use"
+  type        = string
+  default     = "aulaaws"
+}
+
+variable "region" {
+  description = "AWS region"
+  type        = string
+  default     = "sa-east-1"
+}
+
+variable "function_name" {
+  description = "Lambda function name"
+  type        = string
+  default     = "validadigitocpffunction"
+}
+
+variable "handler" {
+  description = "Lambda handler"
+  type        = string
+  default     = "org.example.GeneratorDigitoCpfHandler::handleRequest"
+}
+
+variable "runtime" {
+  description = "Lambda runtime"
+  type        = string
+  default     = "java17"
+}
+
+variable "jar_path" {
+  description = "Relative path to the built jar file from the terraform folder"
+  type        = string
+  default     = "code/app.jar"
+}
+
+variable "publish" {
+  description = "Whether to publish a new Lambda version when updating code"
+  type        = bool
+  default     = false
+}
+```
+
 
 ### locals.tf
+
+```hcl
+locals {
+  jar_fullpath = abspath("${path.module}/${var.jar_path}")
+  label        = "lab-lambda-java"
+  environment  = "lab"
+}
+```
 Resource: `locals`
-- Define valores reutilizados, como prefixos de nomes, tags, identificadores.
+- Defines reusable values, such as name prefixes, tags, and identifiers.
+
 
 ### iam.tf
+
+```hcl
+resource "aws_iam_role" "lambda_role" {
+  name = "aws-lambda-${var.function_name}-custom-role"
+  assume_role_policy = templatefile("${path.module}/iamr/trust/policy-trust.json", {})
+}
+
+resource "aws_iam_role_policy" "lambda_role_policy" {
+  name = "${var.function_name}-inline-policy"
+  role = aws_iam_role.lambda_role.id
+  policy = templatefile("${path.module}/iamr/policy/policy.json", {
+    region        = var.region
+    account_id    = data.aws_caller_identity.current.account_id
+    function_name = var.function_name
+  })
+}
+
+resource "aws_iam_role_policy_attachment" "basic_execution" {
+  role       = aws_iam_role.lambda_role.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+}
+```
 Resources:
-- `aws_iam_role.lambda_execution_role`: Role de execução da Lambda, assume o serviço Lambda (`lambda.amazonaws.com`), usa trust policy (`iamr/trust/trust-policy.json`).
-- `aws_iam_role_policy_attachment.lambda_basic_execution`: Anexa a policy gerenciada `AWSLambdaBasicExecutionRole` para logs no CloudWatch.
-- (Pode incluir policies inline, permissões customizadas, associações com outras policies.)
+- `aws_iam_role.lambda_role`: Lambda execution role, assumes the Lambda service, uses trust policy.
+- `aws_iam_role_policy.lambda_role_policy`: Inline policy for Lambda permissions.
+- `aws_iam_role_policy_attachment.basic_execution`: Attaches the AWS managed policy for CloudWatch logs.
 
 ### lambda.tf
+### lambda.tf
+
+```hcl
+resource "aws_lambda_function" "this" {
+    function_name = var.function_name
+    filename      = local.jar_fullpath
+    handler       = var.handler
+    runtime       = var.runtime
+    role          = aws_iam_role.lambda_role.arn
+    publish       = var.publish
+
+    source_code_hash = filebase64sha256(local.jar_fullpath)
+
+    tags = {
+        label       = local.label
+        environment = local.environment
+    }
+    lifecycle {
+        create_before_destroy = true
+    }
+}
+
+resource "aws_lambda_alias" "alias_dev" {
+    name             = "dev"
+    description      = "Development environment - always points to latest"
+    function_name    = aws_lambda_function.this.function_name
+    function_version = "$LATEST"
+}
+```
+
 Resources:
-- Detalhes da configuração da função Lambda (variáveis de ambiente, VPC, layers, permissões de invocação, triggers).
+- `aws_lambda_function.this`: Creates the Lambda function, specifying function name, JAR file path, handler entry point, runtime (Java 17), execution role, and publish configuration.
+- `source_code_hash`: Uses `filebase64sha256()` to automatically detect JAR changes and trigger function updates.
+- `lifecycle.create_before_destroy`: Ensures new versions are created before the old one is destroyed, preventing downtime.
+- `aws_lambda_alias.alias_dev`: Creates a development alias pointing to `$LATEST`, allowing stable references to the function version without hardcoding version numbers.
+
 
 ### outputs.tf
+
+```hcl
+output "lambda_function_arn" {
+  description = "ARN of the Lambda function"
+  value       = aws_lambda_function.this.arn
+}
+
+output "lambda_function_name" {
+  description = "Name of the Lambda function"
+  value       = aws_lambda_function.this.function_name
+}
+
+output "lambda_role_arn" {
+  description = "IAM role ARN attached to the Lambda"
+  value       = aws_iam_role.lambda_role.arn
+}
+```
 Resources:
-- `output "lambda_function_arn"`: ARN da função Lambda criada.
-- `output "lambda_function_name"`: Nome da função Lambda.
-- `output "iam_role_arn"`: ARN da role de execução.
-- (Outros outputs podem ser definidos conforme necessidade.)
+- `output "lambda_function_arn"`: ARN of the created Lambda function.
+- `output "lambda_function_name"`: Name of the Lambda function.
+- `output "lambda_role_arn"`: ARN of the execution role.
+
 
 ### data.tf
+
+```hcl
+data "aws_caller_identity" "current" {}
+```
 Resources:
-- `data.aws_caller_identity`: Obtém o ID da conta AWS.
-- `data.aws_region`: Obtém a região atual.
-- Usado para compor nomes dinâmicos, ARNs, condicionar recursos.
+- `data.aws_caller_identity`: Gets the AWS account ID.
 
 ### iamr/trust/trust-policy.json
-Arquivo JSON de trust policy autorizando o serviço Lambda (`lambda.amazonaws.com`) a assumir a role de execução.
+JSON trust policy file authorizing the Lambda service (`lambda.amazonaws.com`) to assume the execution role.
 
+---
 
-## 🛠️ Build e Deploy da Função Lambda
+## 🛠️ Build and Deploy the Lambda Function
 
-### 1. Gerar o JAR da função
+### 1. Generate the JAR file
 
 ```bash
 cd app
 ./generator-jar-to-infra.sh
-# O JAR será copiado para infra/terraform/code/app.jar
+# The JAR will be copied to infra/terraform/code/app.jar
 ```
 
-### 2. Provisionar Infraestrutura com Terraform
+### 2. Provision Infrastructure with Terraform
 
 ```bash
 cd infra/terraform
@@ -122,70 +271,70 @@ terraform plan
 terraform apply -var="jar_path=code/app.jar"
 ```
 
-Principais variáveis em `variables.tf`:
+Main variables in `variables.tf`:
 - `regiao` (default: sa-east-1)
-- `lambda_function_name` (ex: validadigitocpffunction)
-- `runtime` (ex: java17)
-- `handler` (ex: org.example.GeneratorDigitoCpfHandler::handleRequest)
-- `jar_path` (ex: code/app.jar)
+- `lambda_function_name` (e.g., validadigitocpffunction)
+- `runtime` (e.g., java17)
+- `handler` (e.g., org.example.GeneratorDigitoCpfHandler::handleRequest)
+- `jar_path` (e.g., code/app.jar)
 
-### 3. Invocando a Lambda manualmente
+### 3. Invoking the Lambda manually
 
-#### Via scripts Bash (invoke/)
+#### Via Bash scripts (invoke/)
 
 ```bash
-# Invocação síncrona
+# Synchronous invocation
 cd invoke
 ./invoke_lambda_sync.sh
 
-# Invocação assíncrona
+# Asynchronous invocation
 ./invoke_lambda_async.sh
 ```
 
-#### Via Console AWS
-- Acesse Lambda → Funções → validadigitocpffunction
-- Clique em "Testar" e use o payload de exemplo:
+#### Via AWS Console
+- Go to Lambda → Functions → validadigitocpffunction
+- Click "Test" and use the example payload:
 
 ```json
 {
-	"cpf": "504647270"
+    "cpf": "504647270"
 }
 ```
 
 ---
 
-## 🧪 Testes e Exemplo de Evento
+## 🧪 Tests and Example Event
 
-O arquivo `app/validadigitocpffunction/events/event-cpf.json` traz um exemplo de evento para testes locais ou via Console AWS.
+The file `app/validadigitocpffunction/events/event-cpf.json` provides an example event for local tests or via AWS Console.
 
 ---
 
-## ⚙️ Componentes da Infraestrutura (Terraform)
+## ⚙️ Infrastructure Components (Terraform)
 
-- IAM roles e policies para execução da Lambda
-- Função Lambda (deploy via pacote gerado pelo Maven)
-- Recursos auxiliares declarados como data sources e outputs
+- IAM roles and policies for Lambda execution
+- Lambda function (deployment via Maven-generated package)
+- Auxiliary resources declared as data sources and outputs
 
-Arquivos principais:
+Main files:
 - `provider.tf`, `main.tf`, `variables.tf`, `locals.tf`, `outputs.tf`, `data.tf`, `iam.tf`, `lambda.tf`
-- Políticas em `iamr/policy/` e `iamr/trust/`
+- Policies in `iamr/policy/` and `iamr/trust/`
 
 ---
 
 ## 📤 Outputs
 
-Após o `terraform apply`, outputs úteis:
-- `lambda_function_arn` - ARN da função Lambda criada
-- `lambda_alias` - alias criado (se aplicável)
-- `iam_role_arn` - ARN da role usada pela Lambda
+After `terraform apply`, useful outputs:
+- `lambda_function_arn` - ARN of the created Lambda function
+- `lambda_alias` - alias created (if applicable)
+- `iam_role_arn` - ARN of the role used by Lambda
 
 ---
 
-## 📝 Referências e Links Úteis
+## 📝 References and Useful Links
 
 - [Java - AWS Lambda](https://docs.aws.amazon.com/lambda/latest/dg/lambda-java.html)
 - [Terraform AWS Provider](https://registry.terraform.io/providers/hashicorp/aws/latest)
-- [Exemplo Java 17 Lambda](https://github.com/awsdocs/aws-lambda-developer-guide/tree/main/sample-apps/java17-examples)
+- [Java 17 Lambda Example](https://github.com/awsdocs/aws-lambda-developer-guide/tree/main/sample-apps/java17-examples)
 - [AWS CLI Lambda Docs](https://awscli.amazonaws.com/v2/documentation/api/latest/reference/lambda/index.html)
 
 ---
