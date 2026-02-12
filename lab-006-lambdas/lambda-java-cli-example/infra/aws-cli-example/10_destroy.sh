@@ -40,6 +40,23 @@ if [ $ARN_POLICY ]; then
     echo "=== ROLE E POLICY DELETADO COM EXITO==="
 fi
 
+# Deletando a IAM Role
+if [ $ARN_POLICY ]; then
+    echo "=== DELETANDO IAM ROLE ==="
+    aws iam delete-role \
+        --role-name aws-lambda-${NOME_RECURSO}-custom-role \
+        --profile $PROFILE
+    echo "=== IAM ROLE DELETADO COM EXITO ==="
+fi
+
+# Deletando a Policy
+if [ $ARN_POLICY ]; then
+    echo "=== DELETANDO POLICY ==="
+    aws iam delete-policy \
+        --policy-arn $ARN_POLICY \
+        --profile $PROFILE
+    echo "=== POLICY DELETADO COM EXITO ==="
+fi
 #==========================END=================================
 
 

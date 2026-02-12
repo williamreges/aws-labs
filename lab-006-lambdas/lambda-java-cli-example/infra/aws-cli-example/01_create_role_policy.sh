@@ -26,7 +26,7 @@ fi
 echo "=== CRIACAO DE POLICY aws-lambda-validadigitocpffunction-custom-policy ==="
 aws iam create-policy \
     --policy-name aws-lambda-${NOME_RECURSO}-custom-policy \
-    --policy-document file://policy.json \
+    --policy-document file://iamr/policy/policy.json\
     --description "This policy grants access to all Put CloudWatch" \
     --profile $PROFILE
 
@@ -36,7 +36,7 @@ echo ""
 echo "=== CRIACAO DE ROLE aws-lambda-validadigitocpffunction-custom-role ==="
 aws iam create-role \
     --role-name aws-lambda-${NOME_RECURSO}-custom-role \
-    --assume-role-policy-document file://policy-trust.json \
+    --assume-role-policy-document file://iamr/trust/policy-trust.json \
     --profile $PROFILE
 
 echo ""
