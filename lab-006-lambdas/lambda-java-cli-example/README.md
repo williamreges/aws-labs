@@ -47,11 +47,59 @@ The main workflow consists of:
 
 ---
 
-## 🔧 Infrastructure (`infra/terraform`)
+### ☕ Java Project Structure (`app/validadigitocpffunction`)
+
+The Java application is a Maven-based Lambda function that validates and generates CPF check digits.
+
+**Main Components:**
+
+- **GeneratorDigitoCpfHandler.java**: Lambda handler entry point that processes incoming requests and returns the calculated CPF check digit.
+- **CalcularDACUtils.java**: Utility class containing the business logic for calculating the DAC (check digit) using the CPF validation algorithm.
+- **Pessoa.java**: Data model class representing a person with CPF information.
+- **pom.xml**: Maven configuration file that manages dependencies (AWS Lambda Core, JSON processing libraries) and build settings, including compilation for Java 17.
+
+**Build Process:**
+
+The `generator-jar-to-infra.sh` script:
+1. Compiles the Java source code with Maven
+2. Packages it into a JAR file (`app.jar`)
+3. Copies the JAR to `infra/terraform/code/` for Terraform to deploy
+
+**Input/Output:**
+
+The Lambda function accepts a JSON event with a CPF string (e.g., `{"cpf": "504647270"}`) and returns the CPF with its calculated check digits.
+
+This packaged JAR is then deployed to AWS Lambda via Terraform, where it runs on Java 17 runtime.
+
+
+## ☸️ Infrastructure (`infra/terraform`)
 
 ### provider.tf
-Resource: `provider "aws"`
-- Configures the AWS provider, defines the region (`region`), authentication, and enables interaction with AWS services.
+
+```hcl
+terraform {
+    required_version = ">= 1.0"
+    required_providers {
+        aws = {
+            source  = "hashicorp/aws"
+            version = "~> 5.0"
+        }
+    }
+}
+
+provider "aws" {
+    region  = var.region
+    profile = var.profile
+}
+```
+
+Resources:
+- `terraform.required_version`: Specifies the minimum Terraform version required (>= 1.0).
+- `terraform.required_providers.aws.source`: Defines the provider source (hashicorp/aws).
+- `terraform.required_providers.aws.version`: Pins the AWS provider version (~> 5.0, allows 5.x updates).
+- `provider "aws".region`: AWS region where resources will be created (uses `var.region` variable).
+- `provider "aws".profile`: AWS CLI profile for authentication (uses `var.profile` variable).
+
 
 ### main.tf
 
@@ -84,9 +132,18 @@ resource "aws_lambda_alias" "alias_dev" {
 ```
 
 Resources:
-- `aws_lambda_function.validadigitocpffunction`: Creates the Lambda function, defines name, handler, runtime, timeout, memory, role, and JAR path.
-- `source_code_hash`: Uses `filebase64sha256()` to detect JAR changes and update the function.
-- (May include associations between resources, such as permissions or triggers.)
+
+- `aws_lambda_function.this`: Creates the Lambda function with the following configuration:
+- `function_name`: Name of the Lambda function (from `var.function_name`).
+- `filename`: Path to the JAR file to be deployed (uses `local.jar_fullpath`).
+- `handler`: Entry point for the Lambda invocation (e.g., `org.example.GeneratorDigitoCpfHandler::handleRequest`).
+- `runtime`: Execution runtime, set to Java 17 (from `var.runtime`).
+- `role`: IAM execution role ARN that grants permissions to the Lambda function.
+- `publish`: When `true`, publishes a new version of the function after updates; when `false`, updates the `$LATEST` version.
+- `source_code_hash`: Uses `filebase64sha256()` to generate a hash of the JAR file; when the hash changes, Terraform detects the change and redeploys the function.
+- `tags`: Metadata tags for organization and tracking (label and environment).
+- `lifecycle.create_before_destroy`: Ensures the new function version is created before the old one is destroyed, preventing downtime during updates.
+- `aws_lambda_alias.alias_dev`: Creates an alias named "dev" that points to the `$LATEST` version, allowing stable references to the function without hardcoding version numbers. This is useful for development environments where the function is frequently updated.
 
 
 ### variables.tf
@@ -176,44 +233,6 @@ Resources:
 - `aws_iam_role.lambda_role`: Lambda execution role, assumes the Lambda service, uses trust policy.
 - `aws_iam_role_policy.lambda_role_policy`: Inline policy for Lambda permissions.
 - `aws_iam_role_policy_attachment.basic_execution`: Attaches the AWS managed policy for CloudWatch logs.
-
-### lambda.tf
-### lambda.tf
-
-```hcl
-resource "aws_lambda_function" "this" {
-    function_name = var.function_name
-    filename      = local.jar_fullpath
-    handler       = var.handler
-    runtime       = var.runtime
-    role          = aws_iam_role.lambda_role.arn
-    publish       = var.publish
-
-    source_code_hash = filebase64sha256(local.jar_fullpath)
-
-    tags = {
-        label       = local.label
-        environment = local.environment
-    }
-    lifecycle {
-        create_before_destroy = true
-    }
-}
-
-resource "aws_lambda_alias" "alias_dev" {
-    name             = "dev"
-    description      = "Development environment - always points to latest"
-    function_name    = aws_lambda_function.this.function_name
-    function_version = "$LATEST"
-}
-```
-
-Resources:
-- `aws_lambda_function.this`: Creates the Lambda function, specifying function name, JAR file path, handler entry point, runtime (Java 17), execution role, and publish configuration.
-- `source_code_hash`: Uses `filebase64sha256()` to automatically detect JAR changes and trigger function updates.
-- `lifecycle.create_before_destroy`: Ensures new versions are created before the old one is destroyed, preventing downtime.
-- `aws_lambda_alias.alias_dev`: Creates a development alias pointing to `$LATEST`, allowing stable references to the function version without hardcoding version numbers.
-
 
 ### outputs.tf
 
